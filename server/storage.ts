@@ -71,6 +71,7 @@ export class MemStorage implements IStorage {
     const id = this.nextProjectId++;
     const project: Project = {
       ...insertProject,
+      description: insertProject.description ?? null,
       id,
       createdAt: new Date(),
     };
