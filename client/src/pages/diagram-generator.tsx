@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Loader2, Network, GitBranch, Workflow, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Loader2, Network, GitBranch, Workflow, Pencil, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { API_URL } from "@/lib/config";
 
 type DiagramType = "mermaid" | "graphviz" | "bpmn" | "excalidraw";
@@ -53,12 +53,25 @@ export default function DiagramGenerator() {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isInputVisible, setIsInputVisible] = useState(true);
+  const [zoom, setZoom] = useState(100);
   const { toast } = useToast();
 
   const handleDiagramTypeChange = (type: DiagramType) => {
     setDiagramType(type);
     setCode(defaultExamples[type]);
     setGeneratedImage(null);
+  };
+
+  const handleZoomIn = () => {
+    setZoom((prev) => Math.min(prev + 25, 300));
+  };
+
+  const handleZoomOut = () => {
+    setZoom((prev) => Math.max(prev - 25, 25));
+  };
+
+  const handleZoomReset = () => {
+    setZoom(100);
   };
 
   const handleGenerate = async () => {
@@ -231,16 +244,49 @@ export default function DiagramGenerator() {
                 </div>
               </div>
               {generatedImage && (
-                <Button
-                  onClick={handleDownload}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  data-testid="button-download"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 border rounded-lg p-1">
+                    <Button
+                      onClick={handleZoomOut}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={zoom <= 25}
+                      data-testid="button-zoom-out"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={handleZoomReset}
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-3 text-xs font-medium min-w-[4rem]"
+                      data-testid="button-zoom-reset"
+                    >
+                      {zoom}%
+                    </Button>
+                    <Button
+                      onClick={handleZoomIn}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={zoom >= 300}
+                      data-testid="button-zoom-in"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Button
+                    onClick={handleDownload}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    data-testid="button-download"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </Button>
+                </div>
               )}
             </div>
           </div>
@@ -252,6 +298,7 @@ export default function DiagramGenerator() {
                   src={generatedImage}
                   alt="Generated diagram"
                   className="max-w-full h-auto"
+                  style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
                   data-testid="img-diagram"
                 />
               </div>
