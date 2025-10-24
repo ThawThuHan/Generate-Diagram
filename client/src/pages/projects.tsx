@@ -95,7 +95,7 @@ export default function Projects() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold" data-testid="text-page-title">
-              Projects
+              projects
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Manage your diagram projects

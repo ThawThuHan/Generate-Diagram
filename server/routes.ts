@@ -7,7 +7,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Project routes
   app.get("/api/projects", async (req, res) => {
     try {
-      const projects = await storage.getAllProjects();
+      const projects = await (await storage).getAllProjects();
       res.json(projects);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch projects" });
@@ -17,7 +17,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const project = await storage.getProject(id);
+      const project = await (await storage).getProject(id);
       if (!project) {
         return res.status(404).json({ error: "Project not found" });
       }
@@ -30,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects", async (req, res) => {
     try {
       const data = insertProjectSchema.parse(req.body);
-      const project = await storage.createProject(data);
+      const project = await (await storage).createProject(data);
       res.status(201).json(project);
     } catch (error) {
       res.status(400).json({ error: "Invalid project data" });
@@ -41,7 +41,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const data = insertProjectSchema.partial().parse(req.body);
-      const project = await storage.updateProject(id, data);
+      const project = await (await storage).updateProject(id, data);
       if (!project) {
         return res.status(404).json({ error: "Project not found" });
       }
@@ -54,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const deleted = await storage.deleteProject(id);
+      const deleted = await (await storage).deleteProject(id);
       if (!deleted) {
         return res.status(404).json({ error: "Project not found" });
       }
@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/projects/:projectId/diagrams", async (req, res) => {
     try {
       const projectId = parseInt(req.params.projectId);
-      const diagrams = await storage.getDiagramsByProject(projectId);
+      const diagrams = await (await storage).getDiagramsByProject(projectId);
       res.json(diagrams);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch diagrams" });
@@ -78,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/diagrams/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const diagram = await storage.getDiagram(id);
+      const diagram = await (await storage).getDiagram(id);
       if (!diagram) {
         return res.status(404).json({ error: "Diagram not found" });
       }
@@ -91,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/diagrams", async (req, res) => {
     try {
       const data = insertDiagramSchema.parse(req.body);
-      const diagram = await storage.createDiagram(data);
+      const diagram = await (await storage).createDiagram(data);
       res.status(201).json(diagram);
     } catch (error) {
       res.status(400).json({ error: "Invalid diagram data" });
@@ -102,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const data = insertDiagramSchema.partial().parse(req.body);
-      const diagram = await storage.updateDiagram(id, data);
+      const diagram = await (await storage).updateDiagram(id, data);
       if (!diagram) {
         return res.status(404).json({ error: "Diagram not found" });
       }
@@ -115,7 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/diagrams/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const deleted = await storage.deleteDiagram(id);
+      const deleted = await (await storage).deleteDiagram(id);
       if (!deleted) {
         return res.status(404).json({ error: "Diagram not found" });
       }

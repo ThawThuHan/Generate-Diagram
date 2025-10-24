@@ -241,4 +241,4 @@ async function createStorage(): Promise<IStorage> {
   }
 }
 
-export const storage = await createStorage();
+export const storage: Promise<IStorage> = createStorage();
