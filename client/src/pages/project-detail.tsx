@@ -16,7 +16,10 @@ import {
   Save,
   ArrowLeft,
   Eye,
-  Trash2
+  Trash2,
+  Menu,
+  PanelLeft,
+  PanelLeftClose
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -76,6 +79,7 @@ export default function ProjectDetail() {
   const [diagramName, setDiagramName] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [zoom, setZoom] = useState(100);
   const [selectedDiagram, setSelectedDiagram] = useState<Diagram | null>(null);
   const { toast } = useToast();
@@ -291,8 +295,8 @@ export default function ProjectDetail() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-80 border-r bg-background flex flex-col">
+      <div className="flex-1 flex">
+        <div className="w-80 border-r bg-background flex flex-col transition-all duration-300" style={{ display: isSidebarVisible ? 'flex' : 'none' }}>
           <div className="p-4 border-b">
             <h2 className="font-semibold">Saved Diagrams</h2>
             <p className="text-sm text-muted-foreground">
@@ -383,57 +387,69 @@ export default function ProjectDetail() {
         </div>
 
         <div className="flex-1 flex flex-col">
-          <div className="border-b p-6 space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Diagram Type</label>
-              <div className="inline-flex rounded-lg p-1 bg-muted gap-1">
-                {diagramTypes.map((type) => {
-                  const Icon = type.icon;
-                  return (
+          <div className="flex-1 flex flex-wrap">
+            <div className="flex flex-col border-b p-6 space-y-4 border-r">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+                data-testid="button-toggle-sidebar"
+              >
+                {isSidebarVisible ? (
+                  <PanelLeftClose className="w-5 h-5" />
+                ) : (
+                  <PanelLeft className="w-5 h-5" />
+                )}
+              </Button>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Diagram Type</label>
+                <div className="inline-flex rounded-lg p-1 bg-muted gap-1">
+                  {diagramTypes.map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <Button
+                        key={type.value}
+                        onClick={() => handleDiagramTypeChange(type.value)}
+                        variant={diagramType === type.value ? "secondary" : "ghost"}
+                        size="sm"
+                        className="gap-2"
+                        data-testid={`button-type-${type.value}`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {type.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Output Format</label>
+                <div className="inline-flex rounded-lg p-1 bg-muted gap-1">
+                  {formatTypes.map((fmt) => (
                     <Button
-                      key={type.value}
-                      onClick={() => handleDiagramTypeChange(type.value)}
-                      variant={diagramType === type.value ? "secondary" : "ghost"}
+                      key={fmt.value}
+                      onClick={() => setFormat(fmt.value)}
+                      variant={format === fmt.value ? "secondary" : "ghost"}
                       size="sm"
-                      className="gap-2"
-                      data-testid={`button-type-${type.value}`}
+                      data-testid={`button-format-${fmt.value}`}
                     >
-                      <Icon className="w-4 h-4" />
-                      {type.label}
+                      {fmt.label}
                     </Button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Output Format</label>
-              <div className="inline-flex rounded-lg p-1 bg-muted gap-1">
-                {formatTypes.map((fmt) => (
-                  <Button
-                    key={fmt.value}
-                    onClick={() => setFormat(fmt.value)}
-                    variant={format === fmt.value ? "secondary" : "ghost"}
-                    size="sm"
-                    data-testid={`button-format-${fmt.value}`}
-                  >
-                    {fmt.label}
-                  </Button>
-                ))}
+              <div className="flex flex-col h-full">
+                <label className="text-sm font-medium mb-2">Diagram Code</label>
+                <Textarea
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="flex-1 font-mono text-sm resize-none h-full"
+                  placeholder="Enter your diagram code here..."
+                  data-testid="input-diagram-code"
+                />
               </div>
-            </div>
-          </div>
-
-          <div className="flex-1 flex overflow-hidden">
-            <div className="flex-1 p-6 flex flex-col overflow-hidden border-r">
-              <label className="text-sm font-medium mb-2">Diagram Code</label>
-              <Textarea
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="flex-1 font-mono text-sm resize-none"
-                placeholder="Enter your diagram code here..."
-                data-testid="input-diagram-code"
-              />
             </div>
 
             <div className="flex-1 flex flex-col bg-muted/30">
@@ -490,12 +506,15 @@ export default function ProjectDetail() {
 
               <div className="flex-1 p-6 overflow-auto">
                 {generatedImage ? (
-                  <div className="bg-background rounded-xl border shadow-lg p-6 inline-block">
+                  <div 
+                  className="bg-background rounded-xl border shadow-lg p-6 inline-block"
+                  style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                  >
                     <img
                       src={generatedImage}
                       alt="Generated diagram"
                       className="max-w-full h-auto"
-                      style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                      // style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
                       data-testid="img-diagram"
                     />
                   </div>
@@ -518,8 +537,8 @@ export default function ProjectDetail() {
             </div>
           </div>
 
-          <div className="border-t p-6 bg-background">
-            <div className="flex items-end gap-4 flex-wrap">
+          <div className="flex-2 flex border-t p-6 bg-background">
+            <div className="flex items-end gap-4 flex-wrap w-full">
               <div className="flex-1 min-w-[200px]">
                 <Label htmlFor="diagram-name">Diagram Name</Label>
                 <Input
