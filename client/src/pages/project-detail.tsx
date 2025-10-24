@@ -80,11 +80,11 @@ export default function ProjectDetail() {
   const [selectedDiagram, setSelectedDiagram] = useState<Diagram | null>(null);
   const { toast } = useToast();
 
-  const { data: project } = useQuery<Project>({
+  const { data: project, isError: isProjectError } = useQuery<Project>({
     queryKey: ["/api/projects", projectId],
   });
 
-  const { data: diagrams, isLoading: isLoadingDiagrams } = useQuery<Diagram[]>({
+  const { data: diagrams, isLoading: isLoadingDiagrams, isError: isDiagramsError } = useQuery<Diagram[]>({
     queryKey: ["/api/projects", projectId, "diagrams"],
     enabled: !!projectId,
   });
@@ -132,6 +132,9 @@ export default function ProjectDetail() {
   });
 
   const handleDiagramTypeChange = (type: DiagramType) => {
+    if (generatedImage && generatedImage.startsWith('blob:')) {
+      URL.revokeObjectURL(generatedImage);
+    }
     setDiagramType(type);
     setCode(defaultExamples[type]);
     setGeneratedImage(null);
@@ -175,6 +178,11 @@ export default function ProjectDetail() {
 
       const blob = await response.blob();
       const imageUrl = URL.createObjectURL(blob);
+      
+      if (generatedImage && generatedImage.startsWith('blob:')) {
+        URL.revokeObjectURL(generatedImage);
+      }
+      
       setGeneratedImage(imageUrl);
 
       toast({
@@ -295,6 +303,23 @@ export default function ProjectDetail() {
           <div className="flex-1 overflow-auto p-4 space-y-2">
             {isLoadingDiagrams ? (
               <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : isDiagramsError ? (
+              <div className="text-center py-8" data-testid="text-diagrams-error">
+                <p className="text-sm text-destructive font-medium">
+                  Failed to load diagrams
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Please try again
+                </p>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="mt-3"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "diagrams"] })}
+                >
+                  Retry
+                </Button>
+              </div>
             ) : diagrams && diagrams.length > 0 ? (
               diagrams.map((diagram) => (
                 <Card 

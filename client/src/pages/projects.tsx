@@ -19,7 +19,7 @@ export default function Projects() {
   const [newProjectDescription, setNewProjectDescription] = useState("");
   const { toast } = useToast();
 
-  const { data: projects, isLoading } = useQuery<Project[]>({
+  const { data: projects, isLoading, isError } = useQuery<Project[]>({
     queryKey: ["/api/projects"],
   });
 
@@ -163,6 +163,23 @@ export default function Projects() {
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground" data-testid="text-loading">Loading projects...</p>
+          </div>
+        ) : isError ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-4" data-testid="text-error-state">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 mx-auto flex items-center justify-center">
+                <FolderOpen className="w-8 h-8 text-destructive" />
+              </div>
+              <div>
+                <p className="text-lg font-medium">Failed to load projects</p>
+                <p className="text-sm text-muted-foreground">
+                  There was an error loading your projects. Please try again.
+                </p>
+              </div>
+              <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/projects"] })}>
+                Retry
+              </Button>
+            </div>
           </div>
         ) : projects && projects.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
