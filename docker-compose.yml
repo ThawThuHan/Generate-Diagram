@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   app:
     build: .
@@ -7,12 +6,11 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=5000
-      - DATABASE_URL=postgresql://postgres:postgres@db:5431/gen_diagram_db
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/gen_diagram_db
       - VITE_API_URL=http://10.11.0.28:8000
     depends_on:
-      - db
-    volumes:
-      - .:/app
+      db:
+        condition: service_healthy
     restart: unless-stopped
   db:
     image: postgres
@@ -25,5 +23,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 volumes:
   pgdata:
