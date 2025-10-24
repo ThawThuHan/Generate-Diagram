@@ -176,7 +176,7 @@ export default function DiagramGenerator() {
             <Textarea
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="flex-1 font-mono text-sm resize-none"
+              className="flex-1 font-mono text-sm resize-y"
               placeholder="Enter your diagram code here..."
               data-testid="input-diagram-code"
             />
