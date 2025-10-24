@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Loader2, Network, GitBranch, Workflow, Pencil } from "lucide-react";
+import { Download, Loader2, Network, GitBranch, Workflow, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { API_URL } from "@/lib/config";
 
 type DiagramType = "mermaid" | "graphviz" | "bpmn" | "excalidraw";
@@ -52,6 +52,7 @@ export default function DiagramGenerator() {
   const [code, setCode] = useState(defaultExamples.mermaid);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isInputVisible, setIsInputVisible] = useState(true);
   const { toast } = useToast();
 
   const handleDiagramTypeChange = (type: DiagramType) => {
@@ -129,88 +130,105 @@ export default function DiagramGenerator() {
         </div>
       </header>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[45%_55%] overflow-hidden">
-        <div className="flex flex-col border-r bg-background">
-          <div className="border-b p-6 space-y-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Diagram Type</label>
-              <div className="inline-flex rounded-lg p-1 bg-muted gap-1">
-                {diagramTypes.map((type) => {
-                  const Icon = type.icon;
-                  return (
-                    <Button
-                      key={type.value}
-                      onClick={() => handleDiagramTypeChange(type.value)}
-                      variant={diagramType === type.value ? "secondary" : "ghost"}
-                      size="sm"
-                      className="gap-2"
-                      data-testid={`button-type-${type.value}`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {type.label}
-                    </Button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Output Format</label>
-              <div className="inline-flex rounded-lg p-1 bg-muted gap-1">
-                {formatTypes.map((fmt) => (
-                  <Button
-                    key={fmt.value}
-                    onClick={() => setFormat(fmt.value)}
-                    variant={format === fmt.value ? "secondary" : "ghost"}
-                    size="sm"
-                    data-testid={`button-format-${fmt.value}`}
-                  >
-                    {fmt.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 p-6 flex flex-col overflow-hidden">
-            <label className="text-sm font-medium mb-2">Diagram Code</label>
-            <Textarea
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="flex-1 font-mono text-sm resize-none"
-              placeholder="Enter your diagram code here..."
-              data-testid="input-diagram-code"
-            />
-          </div>
-
-          <div className="p-6 border-t">
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              className="w-full"
-              size="lg"
-              data-testid="button-generate"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  Generating...
-                </>
-              ) : (
-                "Generate Diagram"
-              )}
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-col bg-muted/30">
-          <div className="border-b p-6 bg-background">
-            <div className="flex items-center justify-between">
+      <div className="flex-1 flex overflow-hidden">
+        {isInputVisible && (
+          <div className="w-full lg:w-[45%] flex flex-col border-r bg-background">
+            <div className="border-b p-6 space-y-4">
               <div>
-                <h2 className="text-sm font-medium">Preview</h2>
-                <p className="text-sm text-muted-foreground">
-                  {diagramType.charAt(0).toUpperCase() + diagramType.slice(1)} · {format.toUpperCase()}
-                </p>
+                <label className="text-sm font-medium mb-2 block">Diagram Type</label>
+                <div className="inline-flex rounded-lg p-1 bg-muted gap-1">
+                  {diagramTypes.map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <Button
+                        key={type.value}
+                        onClick={() => handleDiagramTypeChange(type.value)}
+                        variant={diagramType === type.value ? "secondary" : "ghost"}
+                        size="sm"
+                        className="gap-2"
+                        data-testid={`button-type-${type.value}`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {type.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Output Format</label>
+                <div className="inline-flex rounded-lg p-1 bg-muted gap-1">
+                  {formatTypes.map((fmt) => (
+                    <Button
+                      key={fmt.value}
+                      onClick={() => setFormat(fmt.value)}
+                      variant={format === fmt.value ? "secondary" : "ghost"}
+                      size="sm"
+                      data-testid={`button-format-${fmt.value}`}
+                    >
+                      {fmt.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 p-6 flex flex-col overflow-hidden">
+              <label className="text-sm font-medium mb-2">Diagram Code</label>
+              <Textarea
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="flex-1 font-mono text-sm resize-none"
+                placeholder="Enter your diagram code here..."
+                data-testid="input-diagram-code"
+              />
+            </div>
+
+            <div className="p-6 border-t">
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="w-full"
+                size="lg"
+                data-testid="button-generate"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    Generating...
+                  </>
+                ) : (
+                  "Generate Diagram"
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col bg-muted/30 relative">
+          <div className="border-b p-6 bg-background">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => setIsInputVisible(!isInputVisible)}
+                  variant="ghost"
+                  size="icon"
+                  data-testid="button-toggle-input"
+                  className="shrink-0"
+                >
+                  {isInputVisible ? (
+                    <ChevronLeft className="w-5 h-5" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5" />
+                  )}
+                </Button>
+                <div>
+                  <h2 className="text-sm font-medium">Preview</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {diagramType.charAt(0).toUpperCase() + diagramType.slice(1)} · {format.toUpperCase()}
+                  </p>
+                </div>
               </div>
               {generatedImage && (
                 <Button
@@ -227,9 +245,9 @@ export default function DiagramGenerator() {
             </div>
           </div>
 
-          <div className="flex-1 p-8 overflow-auto flex items-center justify-center">
+          <div className="flex-1 p-8 overflow-auto">
             {generatedImage ? (
-              <div className="bg-background rounded-xl border shadow-lg p-6 max-w-full">
+              <div className="bg-background rounded-xl border shadow-lg p-6 inline-block">
                 <img
                   src={generatedImage}
                   alt="Generated diagram"
@@ -238,15 +256,17 @@ export default function DiagramGenerator() {
                 />
               </div>
             ) : (
-              <div className="text-center space-y-4" data-testid="text-empty-state">
-                <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center">
-                  <Network className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-lg font-medium">No diagram yet</p>
-                  <p className="text-sm text-muted-foreground">
-                    Enter your code and click generate
-                  </p>
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center space-y-4" data-testid="text-empty-state">
+                  <div className="w-16 h-16 rounded-full bg-muted mx-auto flex items-center justify-center">
+                    <Network className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium">No diagram yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Enter your code and click generate
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
