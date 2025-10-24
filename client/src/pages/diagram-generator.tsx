@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Download, Loader2, Network, GitBranch, Workflow, Pencil } from "lucide-react";
+import { API_URL } from "@/lib/config";
 
 type DiagramType = "mermaid" | "graphviz" | "bpmn" | "excalidraw";
 type FormatType = "svg" | "png";
@@ -71,7 +72,7 @@ export default function DiagramGenerator() {
 
     setIsGenerating(true);
     try {
-      const response = await fetch(`http://10.11.0.28:8000/${diagramType}/${format}`, {
+      const response = await fetch(`${API_URL}/${diagramType}/${format}`, {
         method: "POST",
         headers: {
           "Content-Type": "text/plain",
