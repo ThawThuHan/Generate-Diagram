@@ -19,7 +19,9 @@ import {
   Trash2,
   Menu,
   PanelLeft,
-  PanelLeftClose
+  PanelLeftClose,
+  ChevronLeft,
+  Plus
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -77,6 +79,7 @@ export default function ProjectDetail() {
   const [format, setFormat] = useState<FormatType>("svg");
   const [code, setCode] = useState(defaultExamples.mermaid);
   const [diagramName, setDiagramName] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -91,6 +94,28 @@ export default function ProjectDetail() {
   const { data: diagrams, isLoading: isLoadingDiagrams, isError: isDiagramsError } = useQuery<Diagram[]>({
     queryKey: ["/api/projects", projectId, "diagrams"],
     enabled: !!projectId,
+  });
+
+  const updateMutation = useMutation<Diagram, Error, Partial<InsertDiagram> & { id: number }>({
+    mutationFn: async (data) => {
+      const res = await apiRequest("PATCH", `/api/diagrams/${data.id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "diagrams"] });
+      // Keep isEditing true so user can continue editing
+      toast({
+        title: "Success",
+        description: "Diagram updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update diagram",
+        variant: "destructive",
+      });
+    },
   });
 
   const saveMutation = useMutation({
@@ -260,8 +285,73 @@ export default function ProjectDetail() {
     setDiagramType(diagram.diagramType as DiagramType);
     setFormat(diagram.format as FormatType);
     setCode(diagram.code);
+    setDiagramName(diagram.name);
     setGeneratedImage(diagram.imageData);
     setZoom(100);
+    setIsEditing(false);
+  };
+
+  const handleEditDiagram = (diagram: Diagram) => {
+    setSelectedDiagram(diagram);
+    setDiagramType(diagram.diagramType as DiagramType);
+    setFormat(diagram.format as FormatType);
+    setCode(diagram.code);
+    setDiagramName(diagram.name);
+    setGeneratedImage(diagram.imageData);
+    setZoom(100);
+    setIsEditing(true);
+  };
+
+  const handleUpdateDiagram = async () => {
+    if (!selectedDiagram) return;
+    if (!diagramName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a diagram name",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      // Generate new image from code
+      const response = await fetch(`${API_URL}/${diagramType}/${format}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain",
+        },
+        body: code,
+      });
+      if (!response.ok) {
+        throw new Error("Failed to generate diagram");
+      }
+      const blob = await response.blob();
+       const imageUrl = URL.createObjectURL(blob);
+      
+      if (generatedImage && generatedImage.startsWith('blob:')) {
+        URL.revokeObjectURL(generatedImage);
+      }
+      
+      setGeneratedImage(imageUrl);
+      const reader = new FileReader();
+      const imageData = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      updateMutation.mutate({
+        id: selectedDiagram.id,
+        name: diagramName,
+        diagramType,
+        format,
+        code,
+        imageData,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate diagram",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteDiagram = (id: number, name: string) => {
@@ -271,6 +361,17 @@ export default function ProjectDetail() {
         setSelectedDiagram(null);
       }
     }
+  };
+
+  const handleAddDiagram = () => {
+    setSelectedDiagram(null);
+    setDiagramType("mermaid");
+    setFormat("png");
+    setCode("");
+    setDiagramName("");
+    setGeneratedImage("");
+    setZoom(100);
+    setIsEditing(false);
   };
 
   return (
@@ -343,7 +444,7 @@ export default function ProjectDetail() {
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                     <div className="flex gap-1">
-                      <Button
+                      {/* <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 text-xs gap-1"
@@ -355,6 +456,19 @@ export default function ProjectDetail() {
                       >
                         <Eye className="w-3 h-3" />
                         View
+                      </Button> */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs gap-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditDiagram(diagram);
+                        }}
+                        data-testid={`button-edit-diagram-${diagram.id}`}
+                      >
+                        <Pencil className="w-3 h-3" />
+                        Edit
                       </Button>
                       <Button
                         variant="ghost"
@@ -383,6 +497,17 @@ export default function ProjectDetail() {
                 </p>
               </div>
             )}
+          </div>
+          <div className="p-4 border-t">
+            <Button
+                className="w-full gap-2"
+                onClick={handleAddDiagram}
+                size="lg"
+                data-testid="button-generate"
+              >
+                <Plus className="w-5 h-5" />
+                 Add Diagram
+              </Button>
           </div>
         </div>
 
@@ -551,7 +676,7 @@ export default function ProjectDetail() {
               </div>
               <Button
                 onClick={handleGenerate}
-                disabled={isGenerating}
+                disabled={isGenerating || selectedDiagram !== null}
                 size="lg"
                 data-testid="button-generate"
               >
@@ -564,26 +689,49 @@ export default function ProjectDetail() {
                   "Generate Diagram"
                 )}
               </Button>
-              <Button
-                onClick={handleSaveDiagram}
-                disabled={!generatedImage || saveMutation.isPending}
-                size="lg"
-                variant="default"
-                className="gap-2"
-                data-testid="button-save-diagram"
-              >
-                {saveMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    Save Diagram
-                  </>
-                )}
-              </Button>
+              {isEditing ? (
+                <Button
+                  onClick={handleUpdateDiagram}
+                  disabled={!selectedDiagram || updateMutation.isPending}
+                  size="lg"
+                  variant="default"
+                  className="gap-2"
+                  data-testid="button-update-diagram"
+                >
+                  {updateMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Update Diagram
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSaveDiagram}
+                  disabled={!generatedImage || saveMutation.isPending || selectedDiagram !== null}
+                  size="lg"
+                  variant="default"
+                  className="gap-2"
+                  data-testid="button-save-diagram"
+                >
+                  {saveMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      Save Diagram
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </div>
