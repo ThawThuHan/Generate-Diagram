@@ -133,4 +133,112 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DbStorage implements IStorage {
+  private db: any;
+
+  constructor(db: any) {
+    this.db = db;
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const { users } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const { users } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const { users } = await import("@shared/schema");
+    const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async getAllProjects(): Promise<Project[]> {
+    const { projects } = await import("@shared/schema");
+    const { desc } = await import("drizzle-orm");
+    return await this.db.select().from(projects).orderBy(desc(projects.createdAt));
+  }
+
+  async getProject(id: number): Promise<Project | undefined> {
+    const { projects } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(projects).where(eq(projects.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const { projects } = await import("@shared/schema");
+    const result = await this.db.insert(projects).values(insertProject).returning();
+    return result[0];
+  }
+
+  async updateProject(id: number, updates: Partial<InsertProject>): Promise<Project | undefined> {
+    const { projects } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.update(projects).set(updates).where(eq(projects.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteProject(id: number): Promise<boolean> {
+    const { projects, diagrams } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    await this.db.delete(diagrams).where(eq(diagrams.projectId, id));
+    const result = await this.db.delete(projects).where(eq(projects.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getDiagramsByProject(projectId: number): Promise<Diagram[]> {
+    const { diagrams } = await import("@shared/schema");
+    const { eq, desc } = await import("drizzle-orm");
+    return await this.db.select().from(diagrams).where(eq(diagrams.projectId, projectId)).orderBy(desc(diagrams.createdAt));
+  }
+
+  async getDiagram(id: number): Promise<Diagram | undefined> {
+    const { diagrams } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.select().from(diagrams).where(eq(diagrams.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createDiagram(insertDiagram: InsertDiagram): Promise<Diagram> {
+    const { diagrams } = await import("@shared/schema");
+    const result = await this.db.insert(diagrams).values(insertDiagram).returning();
+    return result[0];
+  }
+
+  async updateDiagram(id: number, updates: Partial<InsertDiagram>): Promise<Diagram | undefined> {
+    const { diagrams } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.update(diagrams).set(updates).where(eq(diagrams.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteDiagram(id: number): Promise<boolean> {
+    const { diagrams } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    const result = await this.db.delete(diagrams).where(eq(diagrams.id, id)).returning();
+    return result.length > 0;
+  }
+}
+
+// Create storage instance - use DbStorage if DATABASE_URL is set, otherwise fall back to MemStorage
+async function createStorage(): Promise<IStorage> {
+  if (process.env.DATABASE_URL) {
+    const { db } = await import("./db");
+    console.log("✓ Using PostgreSQL database storage");
+    return new DbStorage(db);
+  } else {
+    console.log("⚠ Using in-memory storage (data will be lost on restart)");
+    return new MemStorage();
+  }
+}
+
+export const storage = await createStorage();

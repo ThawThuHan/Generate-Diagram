@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, serial, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -18,7 +18,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 export const projects = pgTable("projects", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -33,7 +33,7 @@ export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type Project = typeof projects.$inferSelect;
 
 export const diagrams = pgTable("diagrams", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   projectId: integer("project_id").notNull(),
   name: text("name").notNull(),
   diagramType: text("diagram_type").notNull(),
