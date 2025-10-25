@@ -30,6 +30,7 @@ import { API_URL } from "@/lib/config";
 import { formatDistanceToNow } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 type DiagramType = "mermaid" | "graphviz" | "bpmn" | "excalidraw";
 type FormatType = "svg" | "png";
@@ -86,6 +87,7 @@ export default function ProjectDetail() {
   const [zoom, setZoom] = useState(100);
   const [selectedDiagram, setSelectedDiagram] = useState<Diagram | null>(null);
   const { toast } = useToast();
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
 
   const { data: project, isError: isProjectError } = useQuery<Project>({
     queryKey: ["/api/projects", projectId],
@@ -627,6 +629,19 @@ export default function ProjectDetail() {
                     </div>
                   )}
                 </div>
+                <div>
+                  <Button
+                    variant={"outline"}
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => setIsFullscreenOpen(true)}
+                    disabled={!generatedImage}
+                    data-testid="button-fullscreen"
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    View Full Screen
+                  </Button>
+                </div>
               </div>
 
               <div className="flex-1 p-6 overflow-auto">
@@ -663,7 +678,7 @@ export default function ProjectDetail() {
           </div>
 
           <div className="flex-2 flex border-t p-6 bg-background">
-            <div className="flex items-end gap-4 flex-wrap w-full">
+            <div className="flex items-end gap-4 flex-wrap w-full justify-between">
               <div className="flex-1 min-w-[200px]">
                 <Label htmlFor="diagram-name">Diagram Name</Label>
                 <Input
@@ -674,7 +689,8 @@ export default function ProjectDetail() {
                   data-testid="input-diagram-name"
                 />
               </div>
-              <Button
+              <div className="flex items-center gap-4 flex-wrap justify-between md:w-auto w-full">
+                <Button
                 onClick={handleGenerate}
                 disabled={isGenerating || selectedDiagram !== null}
                 size="lg"
@@ -732,10 +748,92 @@ export default function ProjectDetail() {
                   )}
                 </Button>
               )}
+              </div>
             </div>
           </div>
         </div>
       </div>
+      <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 overflow-hidden" data-testid="dialog-fullscreen">
+          <div className="h-full flex flex-col">
+            <div className="border-b p-4 bg-background">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsFullscreenOpen(false)}
+                    className="gap-2"
+                    data-testid="button-close-fullscreen"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Back
+                  </Button>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Full Screen Preview</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 border rounded-lg">
+                    <Button
+                      onClick={handleZoomOut}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={zoom <= 25}
+                      data-testid="button-fullscreen-zoom-out"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={handleZoomReset}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-xs font-medium"
+                      data-testid="button-fullscreen-zoom-reset"
+                    >
+                      {zoom}%
+                    </Button>
+                    <Button
+                      onClick={handleZoomIn}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      disabled={zoom >= 300}
+                      data-testid="button-fullscreen-zoom-in"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Button
+                    onClick={handleDownload}
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 gap-2"
+                    data-testid="button-fullscreen-download"
+                  >
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto inline-block bg-muted p-6">
+                {generatedImage && (
+                  <div
+                    className="bg-background rounded-xl border shadow-lg p-6 inline-block"
+                    style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top left' }}
+                  >
+                    <img
+                      src={generatedImage}
+                      alt="Generated diagram"
+                      className="max-w-full h-auto"
+                      data-testid="img-fullscreen-diagram"
+                    />
+                  </div>
+                )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
