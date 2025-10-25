@@ -755,7 +755,7 @@ export default function ProjectDetail() {
       </div>
       <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
         <DialogContent className="max-w-[95vw] max-h-[95vh] w-full h-full p-0 overflow-hidden" data-testid="dialog-fullscreen">
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col overflow-auto">
             <div className="border-b p-4 bg-background">
               <div className="flex items-center justify-between gap-4">
                 <div>
